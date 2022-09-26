@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.Sensor;
-import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.net.Uri;
@@ -28,7 +27,6 @@ import android.widget.Switch;
 import android.widget.TextView;
 
 import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -75,27 +73,11 @@ public class MainActivity extends AppCompatActivity {
                         putMeasure(buff, q.poll());
                     }
                     final float[] aggRot = rda.getAggregated();
-                    if (aggRot != null) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                for (int i = 0; i < 3; i++) {
-                                    tDatar[i].setText(Float.toString(aggRot[i]));
-                                }
-                            }
-                        });
-                    }
+                    updateUi(aggRot, tDatar);
                     final float[] aggMov = mda.getAggregated();
-                    if (aggRot != null) {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                for (int i = 0; i < 3; i++) {
-                                    tDataa[i].setText(Float.toString(aggRot[i]));
-                                }
-                            }
-                        });
-                    }
+                    updateUi(aggMov, tDatam);
+                    updateUi(mda.getVector(), tDatag);
+                    updateUi(mda.getRotatedVector(), tDataa);
                     //        if (buff.size() > 0) {
                     if (uri != null) {
                         try (OutputStream os = getContentResolver().openOutputStream(uri, "wa")) {
@@ -124,6 +106,19 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        private void updateUi(float[] v, TextView[] ttt) {
+            if (v != null) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (int i = 0; i < v.length; i++) {
+                            ttt[i].setText(Float.toString(v[i]));
+                        }
+                    }
+                });
+            }
+        }
+
         private void putMeasure(List<M> buff, M m) {
             if (m.type == 'A') {
                 if (uri != null){
@@ -143,7 +138,17 @@ public class MainActivity extends AppCompatActivity {
     private SensorEventListener listener2;
 
     private TextView[] tDatar;
+    private TextView[] tDatam;
     private TextView[] tDataa;
+    private TextView[] tDatag;
+
+    protected TextView[] getTextViews(int[] ids) {
+        TextView[] result = new TextView[ids.length];
+        for (int i = 0; i < ids.length; i++) {
+            result[i] = findViewById(ids[i]);
+        }
+        return result;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -158,17 +163,19 @@ public class MainActivity extends AppCompatActivity {
         sm = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         s = sm.getSensorList(Sensor.TYPE_ACCELEROMETER).get(0);
         s2 = sm.getSensorList(Sensor.TYPE_GYROSCOPE).get(0);
-        tDataa = new TextView[]{
+        tDatam = getTextViews(new int[]{R.id.motx, R.id.moty, R.id.motz});/*new TextView[]{
                 findViewById(R.id.motx),
                 findViewById(R.id.moty),
                 findViewById(R.id.motz)
-        };
+        };*/
         listener = new QueuingSensorListener(numa, 'A', null, q);
-        tDatar = new TextView[]{
+        tDatar = getTextViews(new int[]{R.id.rotx, R.id.roty, R.id.rotz});//new TextView[]{
+        tDataa = getTextViews(new int[]{R.id.ax, R.id.ay, R.id.az});//new TextView[]{
+        tDatag = getTextViews(new int[]{R.id.gx, R.id.gy, R.id.gz});/*new TextView[]{
                 findViewById(R.id.rotx),
                 findViewById(R.id.roty),
                 findViewById(R.id.rotz)
-        };
+        };*/
         listener2 = new QueuingSensorListener(numr, 'R', null, q);
         mode = findViewById(R.id.mode);
 
